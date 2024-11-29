@@ -3,41 +3,7 @@ import pandas as pd
 from playwright.sync_api import sync_playwright
 import time
 
-# Custom Styling
-st.set_page_config(
-    page_title="Probate Data Scraper", 
-    page_icon="⚖️", 
-    layout="wide"
-)
-
-# Custom CSS
-st.markdown("""
-    <style>
-    .big-font {
-        font-size:20px !important;
-        color: #4a4a4a;
-    }
-    .stButton>button {
-        color: white;
-        background-color: #4CAF50;
-        border-radius: 10px;
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        background-color: #45a049;
-        transform: scale(1.05);
-    }
-    .dataframe {
-        border-radius: 10px;
-        overflow: hidden;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-st.title("🏛️ Probate Data Scraper")
-st.markdown("### Extract Detailed Probate Case Information", unsafe_allow_html=True)
-
-# Sidebar for additional context
+st.title("Probate Auto bot")
 business_day = st.date_input("Select Auction Date")
 run_button = st.button("Run Scraper")
 
@@ -54,19 +20,20 @@ def Scrapper(business_day):
         data = []
 
         try:
+            # Increase wait time and add more robust loading check
             page.wait_for_selector("//tr[@bgcolor='lightblue' or @bgcolor='White']", timeout=30000)
             
+            # Scroll and wait to ensure all content is loaded
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            page.wait_for_timeout(2000)
+
             rows = page.locator("//tr[@bgcolor='lightblue' or @bgcolor='White']")
             row_count = rows.count()
-            
-            progress_bar = st.progress(0)
-            status_text = st.empty()
+            st.info(f"Total rows found: {row_count}")
 
             for row_index in range(row_count):
                 try:
-                    status_text.info(f"Processing row {row_index+1} of {row_count}")
-                    progress_bar.progress((row_index + 1) / row_count)
-
+                    # Re-locate rows to ensure freshness
                     rows = page.locator("//tr[@bgcolor='lightblue' or @bgcolor='White']")
                     row = rows.nth(row_index)
 
@@ -75,7 +42,10 @@ def Scrapper(business_day):
                         case_link = row.locator("a")
                         case_link.click()
 
+                        # Increased wait time and added network idle
                         page.wait_for_selector("//table[@bgcolor='lightblue']", timeout=20000)
+                        page.wait_for_load_state('networkidle')
+
                         detail_rows = page.locator("//table[@bgcolor='lightblue']/tbody/tr")
 
                         case_details = {}
@@ -84,13 +54,13 @@ def Scrapper(business_day):
                                 header = detail_row.query_selector("th").text_content().strip()
                                 value = detail_row.query_selector("td").text_content().strip()
 
-                                # Column name mapping
-                                header_map = {
-                                    "City": "Property City",
-                                    "State": "Property State", 
-                                    "Zip": "Property Zip"
-                                }
-                                header = header_map.get(header, header)
+                                if header == "City":
+                                    header = "Property City"
+                                elif header == "State":
+                                    header = "Property State"
+                                elif header == "Zip":
+                                    header = "Property Zip"
+
                                 case_details[header] = value
                             except Exception:
                                 continue
@@ -104,6 +74,8 @@ def Scrapper(business_day):
                         page.goto(additional_url)
 
                         page.wait_for_selector("//table[@bgcolor='lightblue']", timeout=20000)
+                        page.wait_for_load_state('networkidle')
+
                         additional_rows = page.locator("//table[@bgcolor='lightblue']/tbody/tr")
 
                         additional_details = {}
@@ -134,39 +106,27 @@ def Scrapper(business_day):
         return pd.DataFrame(data)
 
 if run_button:
-    with st.spinner('Scraping in progress...'):
-        data = Scrapper(business_day)
+    st.info("Starting the scraping process...")
     
+    data = Scrapper(business_day)
     if not data.empty:
         split_names = data['Estate Fiduciaries Name'].str.split(', ', n=2, expand=True)
         data['Last Name'] = split_names[0]
         data['First Name'] = split_names[1].str.split(' ').str[0].fillna('')
             
-        data = data.rename(columns={
-            'Decedent Street': 'Property Address',
-            'Street': 'Mailing Address',
-            'City': 'Mailing City',
-            'State': 'Mailing State',
-            'Zip': 'Mailing zip',
-            'Date Opened': 'Probate Open Date'
-        })
-        
-        columns_to_keep = [
-            'Property Address', 'Property City', 'Property State', 'Property Zip', 
-            'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
-            'Phone Number', 'First Name', 'Last Name', 'Probate Open Date'
-        ]
+        data = data.rename(columns={'Decedent Street': 'Property Address',
+                                "Street":"Mailing Address",
+                                "City":"Mailing City",
+                                "State":"Mailing State",
+                                "Zip":"Mailing zip",
+                                "Date Opened":"Probate Open Date"})
+        columns_to_keep = ['Property Address',"Property City","Property State","Property Zip","Mailing Address","Mailing City","Mailing State","Mailing zip","Phone Number","First Name","Last Name","Probate Open Date"]
         data = data[columns_to_keep]
-        
-
         st.success(f"✅ Scraping completed! Total entries: {len(data)}")
-        st.dataframe(data, use_container_width=True)
-        
-
+        st.dataframe(data)
         st.download_button(
-            label="Download CSV 📄",
+            label="Download CSV",
             data=data.to_csv(index=False).encode('utf-8'),
-            file_name=f'probate_details_{business_day.strftime("%Y%m%d")}.csv',
-            mime='text/csv',
-            key='download_btn'
+            file_name=f'auction_details_{business_day.strftime("%Y%m%d")}.csv',
+            mime='text/csv'
         )

@@ -3,9 +3,13 @@ import pandas as pd
 from playwright.sync_api import sync_playwright
 import time
 import os
+def install_browsers():
+    p = sync_playwright().start()
+    p.chromium.install()
+    p.stop()
 
 # Install Playwright browsers (required for deployment)
-install_playwright()
+install_browsers()
 
 
 st.title("Probate Auto Bot")

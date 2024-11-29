@@ -50,7 +50,7 @@ def Scrapper(business_day):
         context = browser.new_context()
         page = context.new_page()
         page.goto(url)
-
+        time.sleep(5) 
         data = []
 
         try:
@@ -76,6 +76,7 @@ def Scrapper(business_day):
                         case_link.click()
 
                         page.wait_for_selector("//table[@bgcolor='lightblue']", timeout=20000)
+                        time.sleep(2)  
                         detail_rows = page.locator("//table[@bgcolor='lightblue']/tbody/tr")
 
                         case_details = {}

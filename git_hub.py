@@ -4,8 +4,9 @@ from playwright.sync_api import sync_playwright
 import time
 import os
 
-# Ensure Playwright uses local binaries
-os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+# Install Playwright browsers (required for deployment)
+os.system("playwright install chromium")
+
 
 st.title("Probate Auto Bot")
 

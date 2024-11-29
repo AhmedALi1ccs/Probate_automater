@@ -5,7 +5,7 @@ import time
 import os
 
 # Install Playwright browsers (required for deployment)
-os.system("playwright install chromium")
+install_playwright()
 
 
 st.title("Probate Auto Bot")

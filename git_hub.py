@@ -38,11 +38,8 @@ st.title("🏛️ Probate Data Scraper")
 st.markdown("### Extract Detailed Probate Case Information", unsafe_allow_html=True)
 
 # Sidebar for additional context
-with st.sidebar:
-    st.header("🔍 Scraper Controls")
-    business_day = st.date_input("Select Auction Date")
-    run_button = st.button("Start Scraping", key="scrape_btn")
-    st.info("Select a date to retrieve probate case details.")
+business_day = st.date_input("Select Auction Date")
+run_button = st.button("Run Scraper")
 
 def Scrapper(business_day):
     formatted_date = business_day.strftime('%Y%m%d')

@@ -159,17 +159,15 @@ if run_button:
         ]
         data = data[columns_to_keep]
         
-        col1, col2 = st.columns([3, 1])
         
-        with col1:
-            st.success(f"✅ Scraping completed! Total entries: {len(data)}")
-            st.dataframe(data, use_container_width=True)
+
+        st.success(f"✅ Scraping completed! Total entries: {len(data)}")
+        st.dataframe(data, use_container_width=True)
         
-        with col2:
-            st.download_button(
-                label="Download CSV 📄",
-                data=data.to_csv(index=False).encode('utf-8'),
-                file_name=f'probate_details_{business_day.strftime("%Y%m%d")}.csv',
-                mime='text/csv',
-                key='download_btn'
-            )
+        st.download_button(
+            label="Download CSV 📄",
+            data=data.to_csv(index=False).encode('utf-8'),
+            file_name=f'probate_details_{business_day.strftime("%Y%m%d")}.csv',
+            mime='text/csv',
+            key='download_btn'
+        )

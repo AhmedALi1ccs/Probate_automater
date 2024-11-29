@@ -3,8 +3,10 @@ import pandas as pd
 from playwright.sync_api import sync_playwright
 import time
 import os
-st.title("Probate Auto Bot")
+
+# Install Playwright browsers (required for deployment)
 os.system("playwright install chromium")
+st.title("Probate Auto Bot")
 business_day = st.date_input("Select Auction Date")
 run_button = st.button("Run Scraper")
 

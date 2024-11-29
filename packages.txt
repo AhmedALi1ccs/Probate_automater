@@ -9,3 +9,4 @@ libasound2
 libpangocairo-1.0-0
 libxshmfence-dev
 libxshmfence1
+chromium

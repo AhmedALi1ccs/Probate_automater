@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from playwright.sync_api import sync_playwright
 import time
+import os
 st.title("Probate Auto Bot")
 os.system("playwright install chromium")
 business_day = st.date_input("Select Auction Date")

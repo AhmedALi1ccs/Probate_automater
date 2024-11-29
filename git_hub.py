@@ -105,7 +105,18 @@ if run_button:
         # Process and Display Data
         st.success(f"✅ Scraping completed! Total entries: {len(data)}")
         st.dataframe(data)
-
+        split_names = data['Estate Fiduciaries Name'].str.split(', ', n=2, expand=True)
+        data['Last Name'] = split_names[0]
+        data['First Name'] = split_names[1].str.split(' ').str[0].fillna('')
+            
+        data = data.rename(columns={'Decedent Street': 'Property Address',
+                                "Street":"Mailing Address",
+                                "City":"Mailing City",
+                                "State":"Mailing State",
+                                "Zip":"Mailing zip",
+                                "Date Opened":"Probate Open Date"})
+        columns_to_keep = ['Property Address',"Property City","Property State","Property Zip","Mailing Address","Mailing City","Mailing State","Mailing zip","Phone Number","First Name","Last Name","Probate Open Date"]
+        data = data[columns_to_keep]
         # Download Button
         st.download_button(
             label="Download CSV",

@@ -2,8 +2,14 @@ import streamlit as st
 import pandas as pd
 from playwright.sync_api import sync_playwright
 import time
+st.set_page_config(
+    page_title="Probate Data Scraper", 
+    page_icon="⚖️", 
+    layout="wide"
+)
 
-st.title("Probate Auto bot")
+st.title("🏛️ Probate Data Scraper")
+st.markdown("### Extract Detailed Probate Case Information", unsafe_allow_html=True)
 business_day = st.date_input("Select Auction Date")
 run_button = st.button("Run Scraper")
 
@@ -26,6 +32,8 @@ def Scrapper(business_day):
             # Scroll and wait to ensure all content is loaded
             page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             page.wait_for_timeout(2000)
+            progress_bar = st.progress(0)
+            status_text = st.empty()
 
             rows = page.locator("//tr[@bgcolor='lightblue' or @bgcolor='White']")
             row_count = rows.count()
@@ -125,7 +133,7 @@ if run_button:
         st.success(f"✅ Scraping completed! Total entries: {len(data)}")
         st.dataframe(data)
         st.download_button(
-            label="Download CSV",
+            label="Download CSV 📄",
             data=data.to_csv(index=False).encode('utf-8'),
             file_name=f'auction_details_{business_day.strftime("%Y%m%d")}.csv',
             mime='text/csv'

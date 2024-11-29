@@ -20,11 +20,20 @@ def Scrapper(business_day):
         data = []
 
         try:
+            # Increase wait time and add more robust loading check
+            page.wait_for_selector("//tr[@bgcolor='lightblue' or @bgcolor='White']", timeout=30000)
+            
+            # Scroll and wait to ensure all content is loaded
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            page.wait_for_timeout(2000)
+
             rows = page.locator("//tr[@bgcolor='lightblue' or @bgcolor='White']")
             row_count = rows.count()
+            st.info(f"Total rows found: {row_count}")
 
             for row_index in range(row_count):
                 try:
+                    # Re-locate rows to ensure freshness
                     rows = page.locator("//tr[@bgcolor='lightblue' or @bgcolor='White']")
                     row = rows.nth(row_index)
 
@@ -33,7 +42,10 @@ def Scrapper(business_day):
                         case_link = row.locator("a")
                         case_link.click()
 
-                        page.wait_for_selector("//table[@bgcolor='lightblue']")
+                        # Increased wait time and added network idle
+                        page.wait_for_selector("//table[@bgcolor='lightblue']", timeout=20000)
+                        page.wait_for_load_state('networkidle')
+
                         detail_rows = page.locator("//table[@bgcolor='lightblue']/tbody/tr")
 
                         case_details = {}
@@ -61,7 +73,9 @@ def Scrapper(business_day):
                         additional_url = f"https://probatesearch.franklincountyohio.gov/netdata/PBFidDetail.ndm/FID_DETAIL?caseno={case_number};;01"
                         page.goto(additional_url)
 
-                        page.wait_for_selector("//table[@bgcolor='lightblue']")
+                        page.wait_for_selector("//table[@bgcolor='lightblue']", timeout=20000)
+                        page.wait_for_load_state('networkidle')
+
                         additional_rows = page.locator("//table[@bgcolor='lightblue']/tbody/tr")
 
                         additional_details = {}
@@ -77,7 +91,7 @@ def Scrapper(business_day):
                         data.append(combined_data)
 
                         page.goto(url)
-                        page.wait_for_selector("//tr[@bgcolor='lightblue' or @bgcolor='White']")
+                        page.wait_for_selector("//tr[@bgcolor='lightblue' or @bgcolor='White']", timeout=20000)
 
                 except Exception as e:
                     st.warning(f"Error processing row {row_index}: {e}")

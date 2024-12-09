@@ -2,7 +2,10 @@ import streamlit as st
 import pandas as pd
 from playwright.sync_api import sync_playwright
 import time
+import subprocess
 
+# Install the Playwright browsers if not already installed
+subprocess.run(["playwright", "install", "chromium"], check=True)
 # Custom Styling
 st.set_page_config(
     page_title="Probate Data Scraper", 

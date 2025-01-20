@@ -139,58 +139,72 @@ def Scrapper(business_day):
 
 if run_button:
     with st.spinner('Scraping in progress...'):
-        data = Scrapper(business_day)
-    
-    # Replace the current name splitting code with this:
-if not data.empty:
-    try:
-        # First, ensure the column exists
-        if 'Estate Fiduciaries Name' not in data.columns:
-            st.error("Column 'Estate Fiduciaries Name' not found in the data")
-        else:
-            # Handle name splitting with error checking
-            split_names = data['Estate Fiduciaries Name'].str.split(',', n=1, expand=True)
+        try:
+            data = Scrapper(business_day)
             
-            # Safely assign Last Name
-            data['Last Name'] = split_names[0].fillna('')
-            
-            # Safely assign First Name
-            data['First Name'] = ''  # Default empty string
-            mask = split_names.shape[1] > 1  # Check if there's a second part
-            if mask:
-                data.loc[split_names[1].notna(), 'First Name'] = (
-                    split_names[1].str.strip()
-                    .str.split()
-                    .str[0]
-                    .fillna('')
-                )
-
-        # Rest of your code remains the same
-        data = data.rename(columns={
-            'Decedent Street': 'Property Address',
-            'Street': 'Mailing Address',
-            'City': 'Mailing City',
-            'State': 'Mailing State',
-            'Zip': 'Mailing zip',
-            'Date Opened': 'Probate Open Date'
-        })
-        
-        columns_to_keep = [
-            'Property Address', 'Property City', 'Property State', 'Property Zip', 
-            'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
-            'Phone Number', 'First Name', 'Last Name', 'Probate Open Date'
-        ]
-        data = data[columns_to_keep]
-        
-        
-
-        st.success(f"✅ Scraping completed! Total entries: {len(data)}")
-        st.dataframe(data, use_container_width=True)
-        
-        st.download_button(
-            label="Download CSV 📄",
-            data=data.to_csv(index=False).encode('utf-8'),
-            file_name=f'probate_details_{business_day.strftime("%Y%m%d")}.csv',
-            mime='text/csv',
-            key='download_btn'
-        )
+            if not data.empty:
+                try:
+                    # Debug information
+                    st.write("Sample of Estate Fiduciaries Names:")
+                    st.write(data['Estate Fiduciaries Name'].head())
+                    
+                    # Handle name splitting
+                    if 'Estate Fiduciaries Name' not in data.columns:
+                        st.error("Column 'Estate Fiduciaries Name' not found in the data")
+                    else:
+                        split_names = data['Estate Fiduciaries Name'].str.split(',', n=1, expand=True)
+                        
+                        # Safely assign Last Name
+                        data['Last Name'] = split_names[0].fillna('')
+                        
+                        # Safely assign First Name
+                        data['First Name'] = ''  # Default empty string
+                        mask = split_names.shape[1] > 1  # Check if there's a second part
+                        if mask:
+                            data.loc[split_names[1].notna(), 'First Name'] = (
+                                split_names[1].str.strip()
+                                .str.split()
+                                .str[0]
+                                .fillna('')
+                            )
+                    
+                    # Column renaming
+                    data = data.rename(columns={
+                        'Decedent Street': 'Property Address',
+                        'Street': 'Mailing Address',
+                        'City': 'Mailing City',
+                        'State': 'Mailing State',
+                        'Zip': 'Mailing zip',
+                        'Date Opened': 'Probate Open Date'
+                    })
+                    
+                    columns_to_keep = [
+                        'Property Address', 'Property City', 'Property State', 'Property Zip', 
+                        'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
+                        'Phone Number', 'First Name', 'Last Name', 'Probate Open Date'
+                    ]
+                    data = data[columns_to_keep]
+                    
+                    st.success(f"✅ Scraping completed! Total entries: {len(data)}")
+                    st.dataframe(data, use_container_width=True)
+                    
+                    st.download_button(
+                        label="Download CSV 📄",
+                        data=data.to_csv(index=False).encode('utf-8'),
+                        file_name=f'probate_details_{business_day.strftime("%Y%m%d")}.csv',
+                        mime='text/csv',
+                        key='download_btn'
+                    )
+                
+                except KeyError as ke:
+                    st.error(f"Error processing data: Column not found - {str(ke)}")
+                    st.write("Available columns:", list(data.columns))
+                except Exception as e:
+                    st.error(f"Error processing data: {str(e)}")
+                    st.write("Data shape:", data.shape)
+                    st.write("Data columns:", list(data.columns))
+            else:
+                st.warning("No data was retrieved from the scraper.")
+                
+        except Exception as e:
+            st.error(f"Error during scraping: {str(e)}")

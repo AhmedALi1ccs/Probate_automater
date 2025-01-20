@@ -142,38 +142,38 @@ if run_button:
         data = Scrapper(business_day)
     
     # Replace the current name splitting code with this:
-    if not data.empty:
-        try:
-            # First, ensure the column exists
-            if 'Estate Fiduciaries Name' not in data.columns:
-                st.error("Column 'Estate Fiduciaries Name' not found in the data")
-            else:
-                # Handle name splitting with error checking
-                split_names = data['Estate Fiduciaries Name'].str.split(',', n=1, expand=True)
-                
-                # Safely assign Last Name
-                data['Last Name'] = split_names[0].fillna('')
-                
-                # Safely assign First Name
-                data['First Name'] = ''  # Default empty string
-                mask = split_names.shape[1] > 1  # Check if there's a second part
-                if mask:
-                    data.loc[split_names[1].notna(), 'First Name'] = (
-                        split_names[1].str.strip()
-                        .str.split()
-                        .str[0]
-                        .fillna('')
-                    )
-    
-            # Rest of your code remains the same
-            data = data.rename(columns={
-                'Decedent Street': 'Property Address',
-                'Street': 'Mailing Address',
-                'City': 'Mailing City',
-                'State': 'Mailing State',
-                'Zip': 'Mailing zip',
-                'Date Opened': 'Probate Open Date'
-            })
+if not data.empty:
+    try:
+        # First, ensure the column exists
+        if 'Estate Fiduciaries Name' not in data.columns:
+            st.error("Column 'Estate Fiduciaries Name' not found in the data")
+        else:
+            # Handle name splitting with error checking
+            split_names = data['Estate Fiduciaries Name'].str.split(',', n=1, expand=True)
+            
+            # Safely assign Last Name
+            data['Last Name'] = split_names[0].fillna('')
+            
+            # Safely assign First Name
+            data['First Name'] = ''  # Default empty string
+            mask = split_names.shape[1] > 1  # Check if there's a second part
+            if mask:
+                data.loc[split_names[1].notna(), 'First Name'] = (
+                    split_names[1].str.strip()
+                    .str.split()
+                    .str[0]
+                    .fillna('')
+                )
+
+        # Rest of your code remains the same
+        data = data.rename(columns={
+            'Decedent Street': 'Property Address',
+            'Street': 'Mailing Address',
+            'City': 'Mailing City',
+            'State': 'Mailing State',
+            'Zip': 'Mailing zip',
+            'Date Opened': 'Probate Open Date'
+        })
         
         columns_to_keep = [
             'Property Address', 'Property City', 'Property State', 'Property Zip', 

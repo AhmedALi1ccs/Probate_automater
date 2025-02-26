@@ -230,7 +230,8 @@ if run_button:
                         'City': 'Mailing City',
                         'State': 'Mailing State',
                         'Zip': 'Mailing zip',
-                        'Date Opened': 'Probate Open Date'
+                        'Date Opened': 'Probate Open Date',
+                        'Fiduciary_1_Attorney_Name':'Attorney Name'
                     }
                     
                     # Only rename columns that exist
@@ -239,16 +240,13 @@ if run_button:
                             data = data.rename(columns={old_name: new_name})
                     
                     # Uncomment if you want to keep only specific columns
-                    # columns_to_keep = [
-                    #     'Property Address', 'Property City', 'Property State', 'Property Zip', 
-                    #     'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
-                    #     'Phone Number', 'First Name', 'Last Name', 'Probate Open Date',
-                    #     # Add fiduciary columns you want to keep
-                    #     'Fiduciary_1_Name', 'Fiduciary_1_Title_Description', 'Fiduciary_1_Appointment_Date',
-                    #     'Fiduciary_1_Attorney_Name'
-                    # ]
-                    # columns_to_keep = [col for col in columns_to_keep if col in data.columns]
-                    # data = data[columns_to_keep]
+                    columns_to_keep = [
+                       'Property Address', 'Property City', 'Property State', 'Property Zip', 
+                         'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
+                         'Attorney Name'
+                     ]
+                     columns_to_keep = [col for col in columns_to_keep if col in data.columns]
+                     data = data[columns_to_keep]
                     
                     st.success(f"✅ Scraping completed! Total entries: {len(data)}")
                     st.dataframe(data, use_container_width=True)

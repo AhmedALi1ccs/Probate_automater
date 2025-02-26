@@ -245,8 +245,8 @@ if run_button:
                          'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
                          'Attorney Name'
                      ]
-                     columns_to_keep = [col for col in columns_to_keep if col in data.columns]
-                     data = data[columns_to_keep]
+                    columns_to_keep = [col for col in columns_to_keep if col in data.columns]
+                    data = data[columns_to_keep]
                     
                     st.success(f"✅ Scraping completed! Total entries: {len(data)}")
                     st.dataframe(data, use_container_width=True)

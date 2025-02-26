@@ -104,6 +104,7 @@ def Scrapper(business_day):
                             page.go_back()
                             continue
 
+                        # Get additional details from the FID_DETAIL page
                         additional_url = f"https://probatesearch.franklincountyohio.gov/netdata/PBFidDetail.ndm/FID_DETAIL?caseno={case_number};;01"
                         page.goto(additional_url)
 
@@ -119,9 +120,55 @@ def Scrapper(business_day):
                             except Exception:
                                 continue
 
-                        combined_data = {**case_details, **additional_details}
+                        # NEW CODE: Visit the fiduciary page to get more information
+                        fiduciary_url = f"https://probatesearch.franklincountyohio.gov/netdata/PBFidy.ndm/input?caseno={case_number};;"
+                        page.goto(fiduciary_url)
+                        
+                        # Wait for the fiduciary table to load
+                        try:
+                            page.wait_for_selector("table[border='1'][align='center'][cellpadding='1'][bgcolor='black']", timeout=20000)
+                            fiduciary_table = page.locator("table[border='1'][align='center'][cellpadding='1'][bgcolor='black']")
+                            
+                            # Get all rows except header and footer
+                            fiduciary_rows = fiduciary_table.locator("tr[bgcolor='lightblue']")
+                            
+                            # Extract fiduciary information
+                            fiduciary_info = {}
+                            for i in range(fiduciary_rows.count()):
+                                row = fiduciary_rows.nth(i)
+                                cells = row.locator("td")
+                                
+                                # Extract relevant information
+                                fiduciary_number = cells.nth(0).inner_text().strip()
+                                fiduciary_name = cells.nth(1).inner_text().strip()
+                                title = cells.nth(2).inner_text().strip()
+                                title_description = cells.nth(3).inner_text().strip()
+                                appt_date = cells.nth(4).inner_text().strip()
+                                term_date = cells.nth(5).inner_text().strip()
+                                case_closed_date = cells.nth(6).inner_text().strip()
+                                attorney_number = cells.nth(7).inner_text().strip()
+                                attorney_name = cells.nth(8).inner_text().strip()
+                                
+                                # Add these to fiduciary_info
+                                fiduciary_info[f"Fiduciary_{i+1}_Number"] = fiduciary_number
+                                fiduciary_info[f"Fiduciary_{i+1}_Name"] = fiduciary_name
+                                fiduciary_info[f"Fiduciary_{i+1}_Title"] = title
+                                fiduciary_info[f"Fiduciary_{i+1}_Title_Description"] = title_description
+                                fiduciary_info[f"Fiduciary_{i+1}_Appointment_Date"] = appt_date
+                                fiduciary_info[f"Fiduciary_{i+1}_Term_Date"] = term_date
+                                fiduciary_info[f"Fiduciary_{i+1}_Case_Closed_Date"] = case_closed_date
+                                fiduciary_info[f"Fiduciary_{i+1}_Attorney_Number"] = attorney_number
+                                fiduciary_info[f"Fiduciary_{i+1}_Attorney_Name"] = attorney_name
+                            
+                        except Exception as e:
+                            st.warning(f"Error processing fiduciary data for case {case_number}: {e}")
+                            fiduciary_info = {}
+
+                        # Combine all the data
+                        combined_data = {**case_details, **additional_details, **fiduciary_info}
                         data.append(combined_data)
 
+                        # Go back to the main page
                         page.goto(url)
                         page.wait_for_selector("//tr[@bgcolor='lightblue' or @bgcolor='White']", timeout=20000)
 
@@ -146,43 +193,61 @@ if run_button:
                 try:
                     # Debug information
                     st.write("Sample of Estate Fiduciaries Names:")
-                    st.write(data['Estate Fiduciaries Name'].head())
+                    if 'Estate Fiduciaries Name' in data.columns:
+                        st.write(data['Estate Fiduciaries Name'].head())
+                    elif 'Fiduciary_1_Name' in data.columns:
+                        st.write(data['Fiduciary_1_Name'].head())
                     
-                    # Handle name splitting
-                    if 'Estate Fiduciaries Name' not in data.columns:
-                        st.error("Column 'Estate Fiduciaries Name' not found in the data")
-                    else:
-                        split_names = data['Estate Fiduciaries Name'].str.split(',', n=1, expand=True)
+                    # Handle name splitting for the primary fiduciary
+                    primary_name_column = None
+                    if 'Estate Fiduciaries Name' in data.columns:
+                        primary_name_column = 'Estate Fiduciaries Name'
+                    elif 'Fiduciary_1_Name' in data.columns:
+                        primary_name_column = 'Fiduciary_1_Name'
+                    
+                    if primary_name_column:
+                        split_names = data[primary_name_column].str.split(',', n=1, expand=True)
                         
                         # Safely assign Last Name
                         data['Last Name'] = split_names[0].fillna('')
                         
                         # Safely assign First Name
                         data['First Name'] = ''  # Default empty string
-                        mask = split_names.shape[1] > 1  # Check if there's a second part
-                        if mask:
+                        if split_names.shape[1] > 1:  # Check if there's a second part
                             data.loc[split_names[1].notna(), 'First Name'] = (
                                 split_names[1].str.strip()
                                 .str.split()
                                 .str[0]
                                 .fillna('')
                             )
+                    else:
+                        st.warning("No primary fiduciary name column found for name splitting")
                     
                     # Column renaming
-                    data = data.rename(columns={
+                    column_mapping = {
                         'Decedent Street': 'Property Address',
                         'Street': 'Mailing Address',
                         'City': 'Mailing City',
                         'State': 'Mailing State',
                         'Zip': 'Mailing zip',
                         'Date Opened': 'Probate Open Date'
-                    })
+                    }
                     
+                    # Only rename columns that exist
+                    for old_name, new_name in column_mapping.items():
+                        if old_name in data.columns:
+                            data = data.rename(columns={old_name: new_name})
+                    
+                    # Uncomment if you want to keep only specific columns
                     # columns_to_keep = [
                     #     'Property Address', 'Property City', 'Property State', 'Property Zip', 
                     #     'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
                     #     'Phone Number', 'First Name', 'Last Name', 'Probate Open Date',
+                    #     # Add fiduciary columns you want to keep
+                    #     'Fiduciary_1_Name', 'Fiduciary_1_Title_Description', 'Fiduciary_1_Appointment_Date',
+                    #     'Fiduciary_1_Attorney_Name'
                     # ]
+                    # columns_to_keep = [col for col in columns_to_keep if col in data.columns]
                     # data = data[columns_to_keep]
                     
                     st.success(f"✅ Scraping completed! Total entries: {len(data)}")

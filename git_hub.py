@@ -178,12 +178,12 @@ if run_button:
                         'Date Opened': 'Probate Open Date'
                     })
                     
-                    columns_to_keep = [
-                        'Property Address', 'Property City', 'Property State', 'Property Zip', 
-                        'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
-                        'Phone Number', 'First Name', 'Last Name', 'Probate Open Date'
-                    ]
-                    data = data[columns_to_keep]
+                    # columns_to_keep = [
+                    #     'Property Address', 'Property City', 'Property State', 'Property Zip', 
+                    #     'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
+                    #     'Phone Number', 'First Name', 'Last Name', 'Probate Open Date',
+                    # ]
+                    # data = data[columns_to_keep]
                     
                     st.success(f"✅ Scraping completed! Total entries: {len(data)}")
                     st.dataframe(data, use_container_width=True)

@@ -120,11 +120,43 @@ def Scrapper(business_day):
                             except Exception:
                                 continue
 
-                        # NEW CODE: Visit the fiduciary page to get more information
+                        # NEW CODE: Visit the attorney details page to get attorney information
+                        attorney_url = f"https://probatesearch.franklincountyohio.gov/netdata/PBAttyDetail.ndm/ATTY_DETAIL?caseno={case_number};;01"
+                        page.goto(attorney_url)
+                        
+                        # Wait for the attorney details table to load
+                        attorney_details = {}
+                        try:
+                            page.wait_for_selector("//table[@bgcolor='lightblue']", timeout=20000)
+                            attorney_rows = page.locator("//table[@bgcolor='lightblue']/tbody/tr")
+                            
+                            # Process each row in the attorney details table
+                            for atty_row in attorney_rows.element_handles():
+                                try:
+                                    header_element = atty_row.query_selector("th")
+                                    value_element = atty_row.query_selector("td")
+                                    
+                                    if header_element and value_element:
+                                        header = header_element.text_content().strip()
+                                        value = value_element.text_content().strip()
+                                        
+                                        # Skip rows with buttons or links
+                                        if "Back" in value or "View" in value or "New Search" in value or "Homepage" in value:
+                                            continue
+                                            
+                                        # Add "Attorney_" prefix to all attorney detail fields
+                                        attorney_details[f"Attorney_{header}"] = value
+                                except Exception:
+                                    continue
+                        except Exception as e:
+                            st.warning(f"Error processing attorney data for case {case_number}: {e}")
+
+                        # Visit the fiduciary page to get more information
                         fiduciary_url = f"https://probatesearch.franklincountyohio.gov/netdata/PBFidy.ndm/input?caseno={case_number};;"
                         page.goto(fiduciary_url)
                         
                         # Wait for the fiduciary table to load
+                        fiduciary_info = {}
                         try:
                             page.wait_for_selector("table[border='1'][align='center'][cellpadding='1'][bgcolor='black']", timeout=20000)
                             fiduciary_table = page.locator("table[border='1'][align='center'][cellpadding='1'][bgcolor='black']")
@@ -133,7 +165,6 @@ def Scrapper(business_day):
                             fiduciary_rows = fiduciary_table.locator("tr[bgcolor='lightblue']")
                             
                             # Extract fiduciary information
-                            fiduciary_info = {}
                             for i in range(fiduciary_rows.count()):
                                 row = fiduciary_rows.nth(i)
                                 cells = row.locator("td")
@@ -165,7 +196,7 @@ def Scrapper(business_day):
                             fiduciary_info = {}
 
                         # Combine all the data
-                        combined_data = {**case_details, **additional_details, **fiduciary_info}
+                        combined_data = {**case_details, **additional_details, **attorney_details, **fiduciary_info}
                         data.append(combined_data)
 
                         # Go back to the main page
@@ -230,8 +261,7 @@ if run_button:
                         'City': 'Mailing City',
                         'State': 'Mailing State',
                         'Zip': 'Mailing zip',
-                        'Date Opened': 'Probate Open Date',
-                        'Fiduciary_1_Attorney_Name':'Attorney Name'
+                        'Date Opened': 'Probate Open Date'
                     }
                     
                     # Only rename columns that exist
@@ -239,12 +269,21 @@ if run_button:
                         if old_name in data.columns:
                             data = data.rename(columns={old_name: new_name})
                      
+                    # Include attorney details in the columns to keep
+                    attorney_columns = [col for col in data.columns if col.startswith('Attorney_')]
+                    
                     columns_to_keep = [
                        'Property Address', 'Property City', 'Property State', 'Property Zip', 
-                         'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
-                         'Phone Number', 'First Name', 'Last Name', 'Probate Open Date',
-                         'Attorney Name'
-                     ]
+                       'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
+                       'Phone Number', 'First Name', 'Last Name', 'Probate Open Date',
+                       'Case Number / Suffix'  # Added case number for reference
+                    ] + attorney_columns
+                    
+                    # Add fiduciary columns if they exist
+                    fiduciary_columns = [col for col in data.columns if col.startswith('Fiduciary_')]
+                    columns_to_keep += fiduciary_columns
+                    
+                    # Keep only columns that exist in the data
                     columns_to_keep = [col for col in columns_to_keep if col in data.columns]
                     data = data[columns_to_keep]
                     

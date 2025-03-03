@@ -238,11 +238,11 @@ if run_button:
                     for old_name, new_name in column_mapping.items():
                         if old_name in data.columns:
                             data = data.rename(columns={old_name: new_name})
-                    
-                    # Uncomment if you want to keep only specific columns
+                     
                     columns_to_keep = [
                        'Property Address', 'Property City', 'Property State', 'Property Zip', 
                          'Mailing Address', 'Mailing City', 'Mailing State', 'Mailing zip', 
+                         'Phone Number', 'First Name', 'Last Name', 'Probate Open Date',
                          'Attorney Name'
                      ]
                     columns_to_keep = [col for col in columns_to_keep if col in data.columns]

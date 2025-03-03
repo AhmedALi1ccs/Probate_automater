@@ -280,8 +280,8 @@ if run_button:
                     ] + attorney_columns
                     
                     # Add fiduciary columns if they exist
-                    fiduciary_columns = [col for col in data.columns if col.startswith('Fiduciary_')]
-                    columns_to_keep += fiduciary_columns
+                    # fiduciary_columns = [col for col in data.columns if col.startswith('Fiduciary_')]
+                    # columns_to_keep += fiduciary_columns
                     
                     # Keep only columns that exist in the data
                     columns_to_keep = [col for col in columns_to_keep if col in data.columns]
